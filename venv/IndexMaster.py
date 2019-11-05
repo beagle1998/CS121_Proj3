@@ -20,7 +20,7 @@ for domain in os.scandir(directory):
         print(file.path)
         f1=open(file.path,"r")
         soup = BeautifulSoup(f1.read(), 'html.parser')
-        ff=list(filter(None,(re.split((r"[\|\\][t|r|n]|[ ]"),soup.get_text()))))
+        ff=list(filter(None,(re.split((r"([\|\\][t|r|n])|[ ]"),soup.get_text()))))
         print(list(ff))
         f1.close()
 
