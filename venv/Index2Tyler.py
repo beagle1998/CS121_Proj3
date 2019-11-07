@@ -41,7 +41,7 @@ def Tokenizer(file):
             dict2={}#maybe should be set
             for word in ff:
                 word=(ps.stem(word)).lower()   #stemming here??
-                if(re.match(r"[\w]+",word) and len(word)>1):
+                if(re.match(r"[\w]+",word)):
                     if(word in dict2):
                         dict2[word].append(word_pos)
                         word_pos+=1
@@ -63,9 +63,11 @@ def Index(ID,Tok_dict):
 
 #map doc_id to doc url in a dict
 def MAP_DOC_ID(domain,file):
-    global doc_counter,DOC_ID_DICT
+    global doc_counter
     place=str(file.path).split(directory)
-    DOC_ID_DICT.update({doc_counter: place[1][1:]})
+    f2 = open("DOC_ID.txt", "a+")
+    f2.write(str(doc_counter) + "::" + str(place[1][1:]) + "\n")
+    f2.close()
     doc_counter+=1
     return doc_counter-1
 
@@ -79,7 +81,7 @@ def filter_stops(f):
         return True
 
 def file_index():
-    f1 = open("INDEX", "w+")
+    f1 = open("INDEX.txt", "w+")
     # sorting index dict alpha
     for word, postings in sorted(INDEX_DICT.items()):
         f1.write("Word=" + str(word) + "::Postings=")
@@ -92,20 +94,21 @@ def file_index():
             f1.write("{DocID=" + str(i.docid) + ",Pos=" + str(i.positions) + ",TFIDF=" + str(i.tfidf) + "}")
         f1.write("]\n")
     f1.close()
-    f2 = open("DOC_ID", "w+")
-    for word, postings in DOC_ID_DICT.items():
-        f2.write(str(word) + "::" + str(postings) + "\n")
-    f2.close()
 
 
 
 def main():
     global INDEX_DICT
+    fw=open("DOC_ID.txt","w+").close()
     for domain in os.scandir(directory):  # DEV FOlder
+        print(domain)
         for file in os.scandir(domain):  # url folder
             tok=Tokenizer(file)
             d_id=MAP_DOC_ID(domain,file)
             Index(d_id,tok)
-    file_index()
+
+    file_index()#merge and partial indexes
+    print("Doc Count is ->"+str(doc_counter))
+    print("Token Count is ->"+str(len(INDEX_DICT)))
 
 main()
