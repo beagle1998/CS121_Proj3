@@ -21,7 +21,7 @@ def Tokenizer(file):
             ff=list(filter(None,(re.split((r"[^\w0-9]+"),val2))))
             list2=[]
             for word in ff:
-                if(re.match(r"[\w]+",word)):
+                if(re.match(r"[\w]+",word) and len(word)>1):
                     list2.append(word)
             #print(soup.get_text())
             return list2
@@ -54,6 +54,8 @@ def main():
             Index(d_id,tok)
     print(DOC_ID_DICT)
     print(INDEX_DICT)
+
+
     f1=open("INDEX","w+")
     for word,postings in INDEX_DICT.items():
         f1.write(str(word)+"::"+str(postings)+"\n")
