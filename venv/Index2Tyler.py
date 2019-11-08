@@ -31,17 +31,25 @@ class Postings:#each doc id is a posting?
 #tokenizer returns a dict of words as keys and word positions as values in a list form
 def Tokenizer(file):
             word_pos=0
+            dict2 = {}
             f1=open(file.path,"r")
             soup = BeautifulSoup(f1.read(), 'html.parser')
             f1.close()
-            val=(json.loads(soup.get_text()))
-            val2=str(val["content"])
-            ff=list(filter(None,(re.split((r"[^\w0-9']+"),val2))))
+            try:
+            #al=(soup.get_text())
+                val=json.loads(soup.get_text())
+                val=str(val["content"])
+            except ValueError:
+                return dict2
+            #print(val)
+            ff=list(filter(None,(re.split((r"[^\w']+"),val))))
  #          ff=filter(filter_stops,ff) # stop words             DO WE NEED THIS???
-            dict2={}#maybe should be set
+            #maybe should be set
             for word in ff:
+               # print(word)
                 word=(ps.stem(word)).lower()   #stemming here??
-                if(re.match(r"[\w]+",word)):
+                if(word.isalnum()):
+                    print(word)
                     if(word in dict2):
                         dict2[word].append(word_pos)
                         word_pos+=1
@@ -103,6 +111,7 @@ def main():
     for domain in os.scandir(directory):  # DEV FOlder
         print(domain)
         for file in os.scandir(domain):  # url folder
+            print(file)
             tok=Tokenizer(file)
             d_id=MAP_DOC_ID(domain,file)
             Index(d_id,tok)

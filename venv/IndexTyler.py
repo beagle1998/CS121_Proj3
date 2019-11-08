@@ -15,6 +15,7 @@ partial_counter=0
 NumOfDocs=0
 ps=PorterStemmer()
 token_count=0
+output_dict={}#where {filenum;(word,[list of postings]}
 
 
 
@@ -38,17 +39,21 @@ def Tokenizer(file):
 
         soup = BeautifulSoup(f1.read(), 'html.parser')
         f1.close()
-        val=(json.loads(soup.get_text()))
-        val2=str(val["content"])
-        ff=list(filter(None,(re.split((r"[^\w0-9']+"),val2))))
+        try:
+            val=(json.loads(soup.get_text()))
+            val2=str(val["content"])
+        except TypeError:#just skips file?
+            pass
+
+        ff=list(filter(None,(re.split((r"[^\w0-9]+"),val2))))
 #          ff=filter(filter_stops,ff) # stop words             DO WE NEED THIS???
         dict2={}#maybe should be set
         for word in ff:
             word=(ps.stem(word)).lower()   #stemming here??
           #  try:
            #     word.decode("ascii")
-      #      print(word) and word in words.words()
-            if(word.isalnum()):
+      #      print(word) and word in words.words()  word.isalnum()  if(re.match(r"[a-zA-Z0-9]+",word)):
+            if(is_ascii(word) and re.match(r"[a-zA-Z0-9]+",word)):
                 if(word in dict2):
                     dict2[word].append(word_pos)
                     word_pos+=1
@@ -59,9 +64,12 @@ def Tokenizer(file):
             #    pass
 
         return dict2
-#takes in file and token list, checks if dict has key=file _id, and updates accordingly, returns dict
-#index dict holds keys for word, but sets containg the id and a list of positons
-def Partial_Index(ID,Tok_dict):
+
+def is_ascii(s):
+    return all(ord(c) < 128 for c in s)
+
+#puts items in tok_dict int INDEX_DICT for DOCID ID
+def DOC_INDEX_DICT(ID,Tok_dict):
     global INDEX_DICT
     for tok,pos in Tok_dict.items():#tok dict pos is a list there should be no repeates?
             if(tok not in INDEX_DICT):
@@ -88,15 +96,15 @@ def filter_stops(f):
         return False
     else:
         return True
-
-def file_index():
-    file="PINDEX"+str(partial_counter)+".txt"
+#WRITES FROM INDEX_DICT TO PINKEDX.txt
+def write_index():
+    file="./PINDEX/PINDEX"+str(partial_counter)+".txt"
     f1 = open(file, "w+", encoding="utf-8")
     global INDEX_DICT
     # sorting index dict alpha
     for word, postings in sorted(INDEX_DICT.items()):
-        print((word))
-        f1.write("Word=" + (word) + "::Postings=")
+       # print((word))
+        f1.write("Word=" + (word) + ":Postings=")
         f1.write("[")
         postings = sorted(postings, key=lambda v: v.tfidf, reverse=False)  # sorting postings of a word by tfidf
         for i in postings:
@@ -108,23 +116,79 @@ def file_index():
     f1.close()
     INDEX_DICT={}
 
-def partial_index_write_merge():
-    f1 = open("INDEX.txt", "w+")
-    global INDEX_DICT
-    # sorting index dict alpha
-    for word, postings in sorted(INDEX_DICT.items()):
-        f1.write("Word=" + str(word) + "::Postings=")
-        f1.write("[")
-        postings = sorted(postings, key=lambda v: v.tfidf, reverse=False)  # sorting postings of a word by tfidf
-        for i in postings:
-            # len(postings)=document frequency for a word
-            # len(pos)=word freq in a doc
-            i.tfidf = round((len(i.positions) / len(postings)), 2)
-            f1.write("{DocID=" + str(i.docid) + ",Pos=" + str(i.positions) + ",TFIDF=" + str(i.tfidf) + "}")
-        f1.write("]\n")
-    f1.close()
-    INDEX_DICT = {}
+#inputs a readline from each of the partial indexes into output_list
+    #output_list = {}  # where {filenum;(word,[list of postings]}, if you want to read from the file used for a word, just use the key of output_list which is f1, or f2, or fx
+    #Word=conjunct::Postings=[{DocID=93,Pos=[200],TFIDF=0.5}{DocID=94,Pos=[409],TFIDF=0.5}] EXAMPLE OF THE READLINE OUTPUT
+#open all partial index files, read a line from each, sort to find the lowest word, merge with base index, replace used line with a newline from its own file, and repeat.
+def partial_index_read():
+    global INDEX_DICT,partial_counter,output_dict
 
+    #output_dict={file object:[file name,words and postings list]}
+    f1 = open("INDEX.txt", "w+")#final INDEX IS INDEX.txt?BASE
+    #reading from all files
+    for i in range(partial_counter):#initializes outputlist per
+        global file,file1
+        file="./PINDEX/PINDEX"+str(i)+".txt"
+        file1="fp"+str(i)
+
+        exec(file1+"=open(file,"r")",globals(),globals())#making a new variable fx for each partial index where x is the PINDEX num
+
+        #print(fp0.readline())
+
+        exec("Index_line="+file1+".readline()",globals(),globals())
+
+        Index_list=Index_line.split(':')#[word='',postings=['']
+        Index_list[0]=Index_list[0][5:]
+        Index_list[1]=Index_list[1][9:-1]
+        output_dict[file1]=(file,Index_list[0],Index_list[1])
+          #exec("output_dict["+file1+"]=("file+","+#inputting a readline from each partial index into output list.
+
+
+    #output_sorted=sorted(output_dict,key=lambda x,y:y[0])#sorts the output dict by the dict.values[0] which is the WORD    and puts it into a list? is output_dict affected or the same still?
+    #index_merge(output_sorted[0])
+    while(len(output_dict)>=1):
+        #print(output_dict["f0"])
+        #print(file1)
+
+        op1=list(output_dict.items())[0]
+        lowest_file=[op1[0]]#list of
+        lowest_word=[op1[1]]
+        for j,k in output_dict.items():
+
+            if(lowest_word[0][1]>k[1]):#searching for lowest word
+                lowest_word=[k]#resets the lists if a new lower word found.
+                lowest_file=[j]
+
+            if(lowest_word[0][1]==k[1]):
+                if(lowest_word[0]==k):
+                    pass
+                else:
+                    lowest_word.append(k)
+                    lowest_file.append(j)
+        #index_merge(lowest_word)#merge to base index
+
+        f1.write(str(lowest_word[0])+"\n")
+
+
+        #replacing lowest_word with next readline/word of its file.
+        for i in list(lowest_file):
+            exec("partial_post="+i+".readline()",globals(),globals())
+            if(partial_post==""):#if a partial index has reached its end close the file and delete its input into the output_dict
+
+                exec(i + ".close()",globals(),globals())
+                del output_dict[i]
+            else:
+                output_dict[i]=partial_post
+    f1.close()
+
+#d_p is [0]=word,[1]=list of postings
+def index_merge(d_p):
+   pass
+
+
+
+def TOKEN_COUNT():
+    pass
 def main():
     global INDEX_DICT,partial_counter,token_count
     fw=open("DOC_ID.txt","w+").close()
@@ -132,13 +196,14 @@ def main():
         print(domain)
         for file in os.scandir(domain):  # url folder
             tok=Tokenizer(file)
-            d_id=MAP_DOC_ID(domain,file)
-            Partial_Index(d_id, tok)
+            d_id=MAP_DOC_ID(domain,file)   #ADDS DOC TO DOCID DICT, returns new DOC ID
+            DOC_INDEX_DICT(d_id, tok)#fills DOC_INDEX with tokens for DOC ID
             if(d_id%100==0):
-                file_index()
+                write_index()#writes the current DOC_INDEX to file
                 partial_counter+=1
+    partial_index_read()#reads from all partial indexes
 
-    file_index()#merge and partial indexes
+    # file_index()#merge and partial indexes
     print("Doc Count is ->"+str(doc_counter))
 
 main()
