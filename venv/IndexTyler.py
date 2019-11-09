@@ -36,18 +36,18 @@ class Postings:#each doc id is a posting?
 def Tokenizer(file):
         word_pos=0
         f1=open(file.path,"r",errors="ignore")
-
+        dict2 = {}
         soup = BeautifulSoup(f1.read(), 'html.parser')
         f1.close()
         try:
             val=(json.loads(soup.get_text()))
             val2=str(val["content"])
-        except TypeError:#just skips file?
-            pass
-
+        except Exception as error:  # just skips file?
+            print(str(error))
+            return dict2
         ff=list(filter(None,(re.split((r"[^a-zA-Z]+"),val2))))
 #          ff=filter(filter_stops,ff) # stop words             DO WE NEED THIS???
-        dict2={}#maybe should be set
+
         for word in ff:
             word=(ps.stem(word)).lower()   #stemming here??
           #  try:
@@ -60,8 +60,6 @@ def Tokenizer(file):
                 else:
                     dict2[word]=[word_pos]
                     word_pos+=1
-         #   except:
-            #    pass
 
         return dict2
 
@@ -97,7 +95,7 @@ def filter_stops(f):
     else:
         return True
 #WRITES FROM INDEX_DICT TO PINKEDX.txt
-def write_index():
+def write_partial_index():
     file="./PINDEX/PINDEX"+str(partial_counter)+".txt"
     f1 = open(file, "w+", encoding="utf-8")
     global INDEX_DICT
@@ -124,7 +122,7 @@ def partial_index_read():
     global INDEX_DICT,partial_counter,output_dict,token_count
 
     #output_dict={file object:[file name,words and postings list]}
-    f1 = open("INDEX.txt", "w+")#final INDEX IS INDEX.txt?BASE
+    f1 = open("INDEX.txt", "w+", encoding="utf-8")#final INDEX IS INDEX.txt?BASE
     #reading from all files
     for i in range(partial_counter):#initializes outputlist per
         global file,file1
@@ -217,8 +215,8 @@ def main():
             tok=Tokenizer(file)
             d_id=MAP_DOC_ID(domain,file)   #ADDS DOC TO DOCID DICT, returns new DOC ID
             DOC_INDEX_DICT(d_id, tok)#fills DOC_INDEX with tokens for DOC ID
-            if(d_id%100==0):
-                write_index()#writes the current DOC_INDEX to file
+            if(d_id%1000==0):
+                write_partial_index()#writes the current DOC_INDEX to file
                 partial_counter+=1
 
     partial_index_read()#reads from all partial indexes
