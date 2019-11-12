@@ -33,6 +33,10 @@ def retrievePostingList(queryStr):
 			if(parseLineFromWord(line) == word):
 				dictPostings[word] = createPostingListFromStr(getStrPostingsFromLine(line))
 	
+	#Merge the dicPostings
+
+	#Return the merge
+	return
 
 #Read word from line
 def parseLineForWord(str1):
@@ -74,3 +78,10 @@ def createPostingListFromStr(strPosting):
 		
 		postingsList.append(tempDocList)
 	return postingsList
+
+def main():
+    #Type in query
+    query = input("Enter your query: ")
+    retrievePostingList(queryStr)
+
+main()
