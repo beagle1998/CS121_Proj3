@@ -1,3 +1,5 @@
+#USING THIS ONE NOW
+
 import os
 from bs4 import BeautifulSoup
 from collections import defaultdict
@@ -5,18 +7,20 @@ import re
 import json
 from nltk import PorterStemmer
 from nltk.corpus import words
+import math
+import string
 #asfasfasf
 
 INDEX_DICT = {}
 #DOC_ID_DICT = {}
-directory="C:\\Users\\tajun\\PycharmProjects\\ICS-121\\DevlopZip\\DEV"
+directory="C:\\Users\\tajun\\PycharmProjects\\ICS-121\\DevlopZip\\PracticeDEV"
 doc_counter=0
 partial_counter=0
 NumOfDocs=0
 ps=PorterStemmer()
 token_count=0
 output_dict={}#where {filenum;(word,[list of postings]}
-
+skip_count=0
 
 
 class Postings:#each doc id is a posting?
@@ -34,18 +38,22 @@ class Postings:#each doc id is a posting?
 #1:tok,2:count,3:list of pos?
 #tokenizer returns a dict of words as keys and word positions as values in a list form
 def Tokenizer(file):
+        global skip_count
         word_pos=0
         f1=open(file.path,"r",errors="ignore")
         dict2 = {}
-        soup = BeautifulSoup(f1.read(), 'html.parser')
+        soup = BeautifulSoup(f1.read(),"html.parser")
         f1.close()
         try:
-            val=(json.loads(soup.get_text()))
-            val2=str(val["content"])
+            val=(json.loads(str(soup.text)))
+            val2=str(val)
+
         except Exception as error:  # just skips file?
             print(str(error))
+            print(file.path)
+            skip_count+=1
             return dict2
-        ff=list(filter(None,(re.split((r"[^a-zA-Z]+"),val2))))
+        ff=list(filter(None,(re.split((r"[^a-zA-Z0-9]+"),val2))))
 #          ff=filter(filter_stops,ff) # stop words             DO WE NEED THIS???
 
         for word in ff:
@@ -53,8 +61,10 @@ def Tokenizer(file):
           #  try:
            #     word.decode("ascii")
       #      print(word) and word in words.words()  word.isalnum()  if(re.match(r"[a-zA-Z0-9]+",word)):
-            if(is_ascii(word) and re.match(r"[a-zA-Z]+",word)):
-                if(word in dict2):
+            if(is_ascii(word) and re.match(r"[a-zA-Z0-9]+",word)):
+                if(str(word).isnumeric() and len(word)>4):
+                   pass
+                elif(word in dict2):
                     dict2[word].append(word_pos)
                     word_pos+=1
                 else:
@@ -120,21 +130,23 @@ def write_partial_index():
 #open all partial index files, read a line from each, sort to find the lowest word, merge with base index, replace used line with a newline from its own file, and repeat.
 def partial_index_read():
     global INDEX_DICT,partial_counter,output_dict,token_count
-
     #output_dict={file object:[file name,words and postings list]}
-    f1 = open("INDEX.txt", "w+", encoding="utf-8")#final INDEX IS INDEX.txt?BASE
+    #f1 = open("INDEX.txt", "w+", encoding="utf-8")#final INDEX IS INDEX.txt?BASE
+    alpha=["0","1","2","3","4","5","6","7","8","9"]
+    alpha.extend(list(string.ascii_lowercase))##opening 26 indexes, one for each letter case
+    for k in alpha:
+        global filealpha
+        filealpha="./INDEX/INDEX"+str(k)+".txt"
+        exec("f"+str(k)+"= open(filealpha, 'w+', encoding='utf-8')",globals(),globals())
+
+
     #reading from all files
     for i in range(partial_counter):#initializes outputlist per
         global file,file1
         file="./PINDEX/PINDEX"+str(i)+".txt"
         file1="fp"+str(i)
-
         exec(file1+"=open(file,"r")",globals(),globals())#making a new variable fx for each partial index where x is the PINDEX num
-
-        #print(fp0.readline())
-
         exec("Index_line="+file1+".readline()",globals(),globals())
-
         Index_list=Index_line.split(':')#[word='',postings=['']
         Index_list[0]=Index_list[0][5:]
         Index_list[1]=Index_list[1][9:-1]
@@ -143,13 +155,14 @@ def partial_index_read():
     while(len(output_dict)>=1):
         #print(output_dict["f0"])
         #print(file1)
+        global lowest_word
 
         op1=list(output_dict.items())[0]
         lowest_file=[op1[0]]#list of
         lowest_word=[op1[1]]
         for j,k in output_dict.items():
 
-            if(lowest_word[0][1]>k[1]):#searching for lowest word
+            if(lowest_word[0][1]>k[1]):#searching for lowest word-list of tuple(file name,word,postings)
                 lowest_word=[k]#resets the lists if a new lower word found.
                 lowest_file=[j]
 
@@ -160,12 +173,16 @@ def partial_index_read():
                     lowest_word.append(k)
                     lowest_file.append(j)
         #index_merge(lowest_word)#merge to base index
-
         token_count+=1
-        f1.write(str(index_merge(lowest_word))+"\n")
-        #f1.write(str(lowest_word[0][1]) if just want len/tok count
+
+        #f1.write(str(index_merge(lowest_word))+"\n")
+        #writing to each different index
+        global merge_before
+        merge_before=str(index_merge(lowest_word))+"\n"
+        exec('f'+str(lowest_word[0][1][0])+'.write(merge_before)',globals(),globals())#+\n???
 
         #replacing lowest_word with next readline/word of its file.
+        #CHECKING IF TO END A FILE READ OR NOT.
         for i in list(lowest_file):
             exec("partial_post="+i+".readline()",globals(),globals())
             if(partial_post==""):#if a partial index has reached its end close the file and delete its input into the output_dict
@@ -176,7 +193,10 @@ def partial_index_read():
                 split1[0] = split1[0][5:]
                 split1[1] = split1[1][9:-1]
                 output_dict[i]=(i,split1[0],split1[1])
-    f1.close()
+
+    for k in alpha:
+        exec("f"+str(k)+".close()")
+    #f1.close()
 
 #takes in lowest word list, splits postings, merges, and returns a new line to write in f1.
 def index_merge(low):
@@ -193,11 +213,12 @@ def index_merge(low):
 
     num_p=len(list1)
     counterf=0
+    #TIFIDF CALCULATING
     for i in list1:
         i=i[0]
         i=i.split('-')
         count=int(i[2][6:])#adjust count location? get word count
-        i.append("TDIF="+str(round((count/num_p),2)))
+        i.append("TDIF="+str(round(((1+math.log(count,10))*(math.log(doc_counter/num_p,10))),2)))#(1+log(term count))*log(corpus size/number of docs with term in it)
         list1[counterf]=i
         counterf+=1
     list1=sorted(list1,key=lambda x:float(x[3][5:]),reverse=True)
@@ -223,5 +244,6 @@ def main():
     # file_index()#merge and partial indexes
     print("Doc Count is ->"+str(doc_counter))
     print("Token Count is ->" + str(token_count))
+    print("Number of skipped files="+str(skip_count))
 
 main()
