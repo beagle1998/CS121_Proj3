@@ -55,7 +55,15 @@ def retrievePostingList(queryStr):
 	print("results",res)
 	#Return the merge
 	return res
-
+def top5(res):
+	res = sorted(res.items(),key=lambda kv:[kv[1],kv[0]],reverse=True) #sorting 
+	print(res)
+	docIdContainsWords=[] #all the doc ids
+	for (docid,score) in res:
+		docIdContainsWords.append(docid)
+	docIdContainsWords = docIdContainsWords[:5] #top 5
+	print("top 5 ",docIdContainsWords)
+	return docIdContainsWords
 #Read word from line
 def parseLineForWord(str1):
 	""" Parse the word from the line """
@@ -100,6 +108,7 @@ def createPostingListFromStr(strPosting):
 def main():
     #Type in query
     query = input("Enter your query: ")
-    retrievePostingList(queryStr)
+    res = retrievePostingList(queryStr)
+    top5DocIds = top5(res) 
 
 main()
