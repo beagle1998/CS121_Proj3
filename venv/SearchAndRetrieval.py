@@ -34,9 +34,27 @@ def retrievePostingList(queryStr):
 				dictPostings[word] = createPostingListFromStr(getStrPostingsFromLine(line))
 	
 	#Merge the dicPostings
+        res = dict() #{'docid':TDIF}
+        words = queryStr.split()
+	for word,postings in dictPostings.items():
+	    #print(word,postings)
+	    if word in words:
+		#print(word,"is in",words)
+		for posting in postings:
+		    tdif = float(posting[3][5:])
+		    docid = int(posting[0][6:])
+		    if docid not in res:
+			#print(docid,"not in",res)
+			res[docid]=tdif
+			#print(res)
+		    else:
+			#print(docid,"is in",res)
+			res[docid]+=tdif
+			#print(res)
 
+	print("results",res)
 	#Return the merge
-	return
+	return res
 
 #Read word from line
 def parseLineForWord(str1):
