@@ -34,23 +34,23 @@ def retrievePostingList(queryStr):
 				dictPostings[word] = createPostingListFromStr(getStrPostingsFromLine(line))
 	
 	#Merge the dicPostings
-        res = dict() #{'docid':TDIF}
-        words = queryStr.split()
+	res = dict() #{'docid':TDIF}
+	words = queryStr.split()
 	for word,postings in dictPostings.items():
-	    #print(word,postings)
-	    if word in words:
+		#print(word,postings)
+		if word in words:
 		#print(word,"is in",words)
-		for posting in postings:
-		    tdif = float(posting[3][5:])
-		    docid = int(posting[0][6:])
-		    if docid not in res:
-			#print(docid,"not in",res)
-			res[docid]=tdif
-			#print(res)
-		    else:
-			#print(docid,"is in",res)
-			res[docid]+=tdif
-			#print(res)
+			for posting in postings:
+				tdif = float(posting[3][5:])
+				docid = int(posting[0][6:])
+				if docid not in res:
+				#print(docid,"not in",res)
+					res[docid]=tdif
+				#print(res)
+				else:
+				#print(docid,"is in",res)
+					res[docid]+=tdif
+				#print(res)
 
 	print("results",res)
 	#Return the merge
@@ -65,12 +65,12 @@ def top5(res):
 	print("top 5 ",docIdContainsWords)
 	return docIdContainsWords
 #Read word from line
-def parseLineForWord(str1):
+def parseLineFromWord(str1):
 	""" Parse the word from the line """
 	#EX: Word=aaainji:Postings=[['DocID=2085', 'Pos=[16772, 16791]', 'Count=2', 'TDIF=2.0']]
 	#	 return aaainji
 	#	 [5:] , read up to :
-	indexColon = word.find(':')
+	indexColon = str1.find(':')
 	return str1[5:indexColon]
 
 def getStrPostingsFromLine(str1):
@@ -108,7 +108,7 @@ def createPostingListFromStr(strPosting):
 def main():
     #Type in query
     query = input("Enter your query: ")
-    res = retrievePostingList(queryStr)
+    res = retrievePostingList(query)
     top5DocIds = top5(res) 
 
 main()
