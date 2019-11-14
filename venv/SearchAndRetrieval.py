@@ -23,15 +23,22 @@ def retrievePostingList(queryStr):
 	#Split query by space
 	listQuery = queryStr.split()
 	
+	print("This is the query you are searching: ", listQuery)
+
 	#Create a dictionary to hold postings of each word { word-str:Postings-list }
 	dictPostings =  dict() 
 	
 	#Build dictPostings by finding the postings for each word 
-	for word in listQuery:
-		while True:
-			line = f1.readline()
-			if(parseLineFromWord(line) == word):
-				dictPostings[word] = createPostingListFromStr(getStrPostingsFromLine(line))
+	
+	line = f1.readline()
+	while line != EOFError:
+		if(parseLineFromWord(line) in listQuery):
+			word = parseLineFromWord(line)
+			listQuery.pop(word)
+			print("Found word: " + str(word))
+			dictPostings[word] = createPostingListFromStr(getStrPostingsFromLine(line))
+			
+		line = f1.readline()
 	
 	#Merge the dicPostings
 	res = dict() #{'docid':TDIF}
