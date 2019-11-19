@@ -58,8 +58,8 @@ def retrievePostingList(queryStr):
 
     #Computing Cosine Scores #########
     dictCosineScores = defaultdict(int)
-    dictLength = defaultdict(int)
-    dictQueryFreq = defaultdict(int)
+    dictLength = defaultdict(lambda:[0,0])
+    dictQueryFreq = defaultdict(int)#first is W document, second is W of q,
 
     words=[]
     for i in queryStr.split():
@@ -78,11 +78,12 @@ def retrievePostingList(queryStr):
             #Add to score
             dictCosineScores[docid] += tfidf * ( tfidf / (1 + math.log(count,10)) * dictQueryFreq[word] )#* w(t, q)
             #Add to Length
-            dictLength[docid] += (1 + math.log(count,10))**2
+            dictLength[docid][0] += (tfidf)**2
+            dictLength[docid][1] += (( tfidf / (1 + math.log(count,10)))* dictQueryFreq[word])**2
 
     
     for d in dictCosineScores:
-        dictCosineScores[d] = dictCosineScores[d] / (dictLength[d])**(1/2) 
+        dictCosineScores[d] = dictCosineScores[d] / (dictLength[d][0]**(1/2)+dictLength[d][1]**(1/2)) 
 
     #Return the dictionary of Cosine Scores
     return dictCosineScores
