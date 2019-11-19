@@ -2,6 +2,8 @@
 from nltk import PorterStemmer
 import time
 import linecache
+from collections import defaultdict
+import math
 
 ps=PorterStemmer()
 # Query 1
@@ -26,7 +28,7 @@ def retrievePostingList(queryStr):
     # Split query by space
     listQuery = queryStr.split()
 
-    # Create a dictionary to hold postings of each word { word-str:Postings-list }
+    # Create a dictionary to hold postings of each word { word-str : Postings-list }
     dictPostings = dict()
 
     # Build dictPostings by finding the postings for each word
@@ -53,11 +55,41 @@ def retrievePostingList(queryStr):
                 line = f1.readline()
         f1.close()
 
-    # Merge the dicPostings
-    res = dict()  # {'docid':TDIF}
+
+    #Computing Cosine Scores #########
+    dictCosineScores = defaultdict(int)
+    dictLength = defaultdict(int)
+    dictQueryFreq = defaultdict(int)
+
     words=[]
     for i in queryStr.split():
         words.append((ps.stem(i)).lower())
+        dictQueryFreq[i] += 1
+
+    for word in words:
+        #Calculat w(t,q)
+
+        #Fetch Posting for word, loop postings list, calc score
+        for posting in dictPostings[word]:
+            #Posting Info
+            tfidf = float(posting[3][5:])
+            docid = int(posting[0][6:])
+            count = int(posting[2][6:])
+            #Add to score
+            dictCosineScores[docid] += tfidf * ( tfidf / (1 + math.log(count,10)) * dictQueryFreq[word] )#* w(t, q)
+            #Add to Length
+            dictLength[docid] += (1 + math.log(count,10))**2
+
+    
+    for d in dictCosineScores:
+        dictCosineScores[d] = dictCosineScores[d] / (dictLength[d])**(1/2) 
+
+    #Return the dictionary of Cosine Scores
+    return dictCosineScores
+
+    # Merge the dicPostings, create {docId:[tfidf word1, 0 word2, tfidf word 3]
+    """res = dict()  # {'docid':TDIF}
+    
     for word, postings in dictPostings.items():
         #print(word,postings)
         if word in words:
@@ -75,9 +107,9 @@ def retrievePostingList(queryStr):
                     res[docid] += tdif
             # print(res)
 
-    print("results", res)
+    print("results", res)"""
     # Return the merge
-    return res
+    #return res
 
 
 def top5(res):#compares/get top5?
