@@ -4,6 +4,8 @@ import time
 import linecache
 from collections import defaultdict
 import math
+import string
+global dictLine
 
 ps=PorterStemmer()
 # Query 1
@@ -26,7 +28,9 @@ def retrievePostingList(queryStr):
     #f1 = open("./Index/INDEXa.txt", "r", errors="ignore")
 
     # Split query by space
-    listQuery = queryStr.split()
+    start_time1 = time.time()
+
+    listQuery = [i.lower() for i in queryStr.split()]
 
     # Create a dictionary to hold postings of each word { word-str : Postings-list }
     dictPostings = dict()
@@ -40,21 +44,38 @@ def retrievePostingList(queryStr):
             break;
         if(lq[i][0]==lq[i+1][0]):
             if(lq[i][0] in wd.keys()):
-                wd[lq[i][0]].append(pq[i+1])
+                wd[lq[i][0]].append(lq[i+1])
                 i+=1
+
+    print("Run Time1=" + str(round(time.time() - start_time1, 3)))
+
     for key,word_list in wd.items():
-        f1 = open("./INDEX/INDEX" + key + ".txt", "r")
+        #f1 = open("./INDEX/INDEX" + key + ".txt", "r")
+        global dictLine
+        LineCount=int(dictLine[key])
+
         for word in word_list:
             word = (ps.stem(word)).lower()  # stemming here??
-            line = f1.readline()
-            while line != "":
+            #line = f1.readline()
+            l=0;
+            r=int(LineCount)
+            mid=int(LineCount)
+            while l<=r:
+                mid=l+math.floor((r-l)/2)
+                line = linecache.getline("./INDEX/INDEX" + key + ".txt",mid)
+                if (parseLineFromWord(line) > word):
+                    r=mid-1
+                elif (parseLineFromWord(line) < word):
+                    l=mid+1
                 if (parseLineFromWord(line) == word):
-                    print(line)
+                    #print(line)
                     dictPostings[word] = createPostingListFromStr(getStrPostingsFromLine(line))
+                    print(word)
                     break;
-                line = f1.readline()
-        f1.close()
+        #f1.close()
+        
 
+    print("Run Time1=" + str(round(time.time() - start_time1, 3)))
 
     #Computing Cosine Scores #########
     dictCosineScores = defaultdict(int)
@@ -68,23 +89,24 @@ def retrievePostingList(queryStr):
 
     for word in words:
         #Calculat w(t,q)
-
-        #Fetch Posting for word, loop postings list, calc score
-        for posting in dictPostings[word]:
-            #Posting Info
-            tfidf = float(posting[3][5:])
-            docid = int(posting[0][6:])
-            count = int(posting[2][6:])
-            #Add to score
-            dictCosineScores[docid] += tfidf * ( tfidf / (1 + math.log(count,10)) * dictQueryFreq[word] )#* w(t, q)
-            #Add to Length
-            dictLength[docid][0] += (tfidf)**2
-            dictLength[docid][1] += (( tfidf / (1 + math.log(count,10)))* dictQueryFreq[word])**2
+        if word in dictPostings:
+            #Fetch Posting for word, loop postings list, calc score
+            for posting in dictPostings[word]:
+                #Posting Info
+                tfidf = float(posting[3][5:])
+                docid = int(posting[0][6:])
+                count = int(posting[2][6:])
+                #Add to score
+                dictCosineScores[docid] += tfidf * ( tfidf / (1 + math.log(count,10)) * dictQueryFreq[word] )#* w(t, q)
+                #Add to Length
+                dictLength[docid][0] += (tfidf)**2
+                dictLength[docid][1] += (( tfidf / (1 + math.log(count,10)))* dictQueryFreq[word])**2
 
     
     for d in dictCosineScores:
         dictCosineScores[d] = dictCosineScores[d] / (dictLength[d][0]**(1/2)+dictLength[d][1]**(1/2)) 
 
+   
     #Return the dictionary of Cosine Scores
     return dictCosineScores
 
@@ -115,12 +137,12 @@ def retrievePostingList(queryStr):
 
 def top5(res):#compares/get top5?
     res = sorted(res.items(), key=lambda kv: [kv[1], kv[0]], reverse=True)  # sorting
-    print(res)
+  #  print(res)
     docIdContainsWords = []  # all the doc ids
     for (docid, score) in res:
         docIdContainsWords.append(docid)
     docIdContainsWords = docIdContainsWords[:5]  # top 5
-    print("top 5 ", docIdContainsWords)
+  #  print("top 5 ", docIdContainsWords)
     return docIdContainsWords
 
 
@@ -171,6 +193,14 @@ def createPostingListFromStr(strPosting):
 def main():
 
     # Type in query
+    fileL=open("IndexLines.txt","r")
+    alpha=["0","1","2","3","4","5","6","7","8","9"]
+    alpha.extend(list(string.ascii_lowercase))
+    global dictLine
+    dictLine={}
+    for i in alpha:
+        dictLine[i]=fileL.readline()
+
     query = input("Enter your query: ")
     start_time = time.time()
     res = retrievePostingList(query)
