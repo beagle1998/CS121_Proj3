@@ -1,4 +1,4 @@
-#USING THIS ONE NOW
+#USING THIS ONE NOW has many alpha numeric indexes.
 
 import os
 from bs4 import BeautifulSoup
@@ -13,7 +13,7 @@ import string
 
 INDEX_DICT = {}
 #DOC_ID_DICT = {}
-directory="C:\\Users\\tajun\\PycharmProjects\\ICS-121\\DevlopZip\\PracticeDEV"
+directory="C:\\Users\\tajun\\PycharmProjects\\ICS-121\\DevlopZip\\DEV"
 doc_counter=0
 partial_counter=0
 NumOfDocs=0
@@ -53,7 +53,7 @@ def Tokenizer(file):
             print(file.path)
             skip_count+=1
             return dict2
-        ff=list(filter(None,(re.split((r"[^a-zA-Z0-9]+"),val2))))
+        ff=list(filter(None,(re.split((r"(\\[a-z])|[^a-z\\A-Z0-9]+"),val2))))
 #          ff=filter(filter_stops,ff) # stop words             DO WE NEED THIS???
 
         for word in ff:
