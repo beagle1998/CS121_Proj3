@@ -30,6 +30,7 @@ def retrievePostingList(queryStr):
     # Split query by space
     start_time1 = time.time()
 
+    #Making Query string into a list
     listQuery = [i.lower() for i in queryStr.split()]
 
     # Create a dictionary to hold postings of each word { word-str : Postings-list }
@@ -46,6 +47,13 @@ def retrievePostingList(queryStr):
             if(lq[i][0] in wd.keys()):
                 wd[lq[i][0]].append(lq[i+1])
                 i+=1
+    """for i in lq:
+        if i[0] not in wd:
+            wd[ i[0] ] = list()
+            wd[ i[0] ].append(i)
+        else:
+            wd[ i[0] ].append(i)"""
+
 
     print("Run Time1=" + str(round(time.time() - start_time1, 3)))
 
@@ -70,7 +78,7 @@ def retrievePostingList(queryStr):
                 if (parseLineFromWord(line) == word):
                     #print(line)
                     dictPostings[word] = createPostingListFromStr(getStrPostingsFromLine(line))
-                    print(word)
+                    #print(word)
                     break;
         #f1.close()
         
@@ -191,7 +199,7 @@ def createPostingListFromStr(strPosting):
 
 
 def main():
-
+    start_time00 = time.time()
     # Type in query
     fileL=open("IndexLines.txt","r")
     alpha=["0","1","2","3","4","5","6","7","8","9"]
@@ -200,7 +208,8 @@ def main():
     dictLine={}
     for i in alpha:
         dictLine[i]=fileL.readline()
-
+    print("Run Time00=" + str(round(time.time() - start_time00, 3)))
+    
     query = input("Enter your query: ")
     start_time = time.time()
     res = retrievePostingList(query)
