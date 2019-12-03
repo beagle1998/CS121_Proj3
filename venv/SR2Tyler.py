@@ -2,6 +2,7 @@
 from nltk import PorterStemmer
 import time
 import linecache
+import re
 from collections import defaultdict
 import math
 import string
@@ -31,28 +32,28 @@ def retrievePostingList(queryStr):
     start_time1 = time.time()
 
     #Making Query string into a list
-    listQuery = [i.lower() for i in queryStr.split()]
-
+    listQuery = [i.lower() for i in re.split((r"[^a-zA-Z0-9]+"), queryStr) if i != ""]
+    print(listQuery)
     # Create a dictionary to hold postings of each word { word-str : Postings-list }
     dictPostings = dict()
 
     # Build dictPostings by finding the postings for each word
     lq = sorted(listQuery)
     wd = {}
-    for i in range(len(lq)):
+    """for i in range(len(lq)):
         wd[lq[i][0]]=[lq[i]]
         if((i+1)>=len(lq)):
             break;
         if(lq[i][0]==lq[i+1][0]):
             if(lq[i][0] in wd.keys()):
                 wd[lq[i][0]].append(lq[i+1])
-                i+=1
-    """for i in lq:
+                i+=1"""
+    for i in lq:
         if i[0] not in wd:
             wd[ i[0] ] = list()
             wd[ i[0] ].append(i)
         else:
-            wd[ i[0] ].append(i)"""
+            wd[ i[0] ].append(i)
 
 
     print("Run Time1=" + str(round(time.time() - start_time1, 3)))
@@ -78,7 +79,7 @@ def retrievePostingList(queryStr):
                 if (parseLineFromWord(line) == word):
                     #print(line)
                     dictPostings[word] = createPostingListFromStr(getStrPostingsFromLine(line))
-                    #print(word)
+                    print(word)
                     break;
         #f1.close()
         
@@ -144,7 +145,7 @@ def retrievePostingList(queryStr):
 
 
 def top5(res):#compares/get top5?
-    res = sorted(res.items(), key=lambda kv: [kv[1], kv[0]], reverse=True)  # sorting
+    res = sorted(res.items(), key=lambda kv: kv[1], reverse=True)  # sorting
   #  print(res)
     docIdContainsWords = []  # all the doc ids
     for (docid, score) in res:
@@ -209,7 +210,7 @@ def main():
     for i in alpha:
         dictLine[i]=fileL.readline()
     print("Run Time00=" + str(round(time.time() - start_time00, 3)))
-    
+
     query = input("Enter your query: ")
     start_time = time.time()
     res = retrievePostingList(query)
@@ -221,6 +222,11 @@ def main():
         indexUrl = len(str(l))+2
         url = text[indexUrl:-1]
         docs.append("DocID-"+str(l)+"="+url)
-    print("top 5 docs=",docs)
+    #Print the document results
+    counter = 1
+    print("Top 5 docs:")
+    for i in docs:
+        print(str(counter) + ". " + i)
+        counter += 1
 
 main()
